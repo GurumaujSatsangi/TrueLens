@@ -4,47 +4,88 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Provider - TrueLens</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
     <link rel="stylesheet" href="/css/styles.css" />
   </head>
   <body>
-    <nav class="topbar">
-      <a class="brand" href="/">TrueLens</a>
-      <div class="navlinks">
-        <a href="/upload">Upload</a>
-        <a href="/providers">Providers</a>
-        <a href="/runs">Runs</a>
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #ffe600;">
+      <div class="container-fluid">
+        <a class="navbar-brand fw-bold text-dark" href="/"><i class="bi bi-check-circle-fill"></i> TrueLens</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item"><a class="nav-link text-dark" href="/upload"><i class="bi bi-upload"></i> Upload</a></li>
+            <li class="nav-item"><a class="nav-link text-dark active" href="/providers"><i class="bi bi-people-fill"></i> Providers</a></li>
+            <li class="nav-item"><a class="nav-link text-dark" href="/runs"><i class="bi bi-play-circle-fill"></i> Runs</a></li>
+          </ul>
+        </div>
       </div>
     </nav>
 
-    <main class="container">
-      <h1>Provider <%= providerId %></h1>
+    <main class="container-fluid py-5">
+      <div class="row mb-4">
+        <div class="col">
+          <h1 class="display-5 fw-bold"><i class="bi bi-person-fill"></i> Provider Details</h1>
+          <p class="text-muted">Provider ID: <code><%= providerId %></code></p>
+        </div>
+        <div class="col-auto">
+          <a href="/providers" class="btn btn-outline-primary"><i class="bi bi-arrow-left"></i> Back</a>
+        </div>
+      </div>
 
-      <h2>Details</h2>
-      <table id="providerDetailsTbl" border="0" cellpadding="8" cellspacing="0">
-        <tbody>
-          <tr><td>Loading...</td></tr>
-        </tbody>
-      </table>
+      <!-- Provider Details Card -->
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+          <h5 class="mb-0"><i class="bi bi-info-circle"></i> Provider Information</h5>
+        </div>
+        <div class="card-body">
+          <div id="detailsSpinner" class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <table id="providerDetailsTbl" class="table table-borderless" style="display: none;">
+            <tbody>
+              <!-- Populated by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-      <h2>Validation Issues</h2>
-      <table id="providerIssuesTbl" border="0" cellpadding="8" cellspacing="0">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Field</th>
-            <th>Old Value</th>
-            <th>Suggested Value</th>
-            <th>Confidence</th>
-            <th>Severity</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td colspan="7">Loading issues...</td></tr>
-        </tbody>
-      </table>
+      <!-- Validation Issues Card -->
+      <div class="card shadow-sm">
+        <div class="card-header bg-light">
+          <h5 class="mb-0"><i class="bi bi-exclamation-triangle"></i> Validation Issues</h5>
+        </div>
+        <div class="card-body">
+          <div id="issuesSpinner" class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <table id="providerIssuesTbl" class="table table-hover table-striped" style="display: none;">
+            <thead class="table-light">
+              <tr>
+                <th>ID</th>
+                <th>Field</th>
+                <th>Current Value</th>
+                <th>Suggested Value</th>
+                <th>Confidence</th>
+                <th>Severity</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Populated by JavaScript -->
+            </tbody>
+          </table>
+          <div id="noIssuesMsg" class="alert alert-success d-none" role="alert">
+            <i class="bi bi-check-circle"></i> No validation issues found for this provider.
+          </div>
+        </div>
+      </div>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/js/provider.js"></script>
   </body>
 </html>

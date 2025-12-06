@@ -1,13 +1,55 @@
 document.getElementById('uploadForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const form = e.target;
-  const file = form.querySelector('input[type=file]').files[0];
-  if (!file) return alert('Select a CSV file');
+  const file = document.getElementById('csvFile').files[0];
+  if (!file) return Swal.fire('Error', 'Select a CSV file', 'error');
 
-  const fd = new FormData();
-  fd.append('file', file);
+  try {
+    // Show spinner
+    Swal.fire({
+      title: 'Importing Data',
+      html: '<p>Please wait — processing your CSV file...</p>',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading();
+      }
+    });
 
-  const res = await fetch('/api/upload/providers', { method: 'POST', body: fd });
-  const json = await res.json();
-  document.getElementById('uploadResult').innerText = JSON.stringify(json);
+    const fd = new FormData();
+    fd.append('file', file);
+
+    const res = await fetch('/api/upload/providers', { method: 'POST', body: fd });
+    const json = await res.json();
+
+    Swal.close();
+
+    if (!res.ok) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Upload Failed',
+        text: json?.error || 'Unknown error occurred',
+        confirmButtonColor: '#333333'
+      });
+      return;
+    }
+
+    Swal.fire({
+      icon: 'success',
+      title: 'Import Successful!',
+      html: `<p><strong>${json.imported}</strong> providers imported successfully.</p>`,
+      confirmButtonColor: '#ffe600',
+      confirmButtonText: 'OK'
+    });
+
+    form.reset();
+    document.getElementById('uploadResult').innerHTML = '';
+  } catch (err) {
+    Swal.close();
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: err?.message || String(err),
+      confirmButtonColor: '#333333'
+    });
+  }
 });

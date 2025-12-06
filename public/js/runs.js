@@ -1,34 +1,47 @@
 async function loadRuns(){
-  const res = await fetch('/api/validation-runs');
-  const json = await res.json();
-  const table = document.getElementById('runsTbl');
-  const tbody = table.querySelector('tbody');
-  if (!json.runs || json.runs.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7">No runs yet.</td></tr>';
-    return;
+  try {
+    const res = await fetch('/api/validation-runs');
+    const json = await res.json();
+    const table = document.getElementById('runsTbl');
+    const spinner = document.querySelector('#runsList .spinner-border');
+    
+    if (!json.runs || json.runs.length === 0) {
+      spinner.style.display = 'none';
+      table.style.display = 'table';
+      table.querySelector('tbody').innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No validation runs yet. Start one to begin!</td></tr>';
+      return;
+    }
+
+    spinner.style.display = 'none';
+    table.style.display = 'table';
+    const tbody = table.querySelector('tbody');
+    
+    const rows = json.runs.map(r => `
+      <tr>
+        <td><code>${escapeHtml(String(r.id))}</code></td>
+        <td>${r.started_at ? escapeHtml(new Date(r.started_at).toLocaleString()) : '—'}</td>
+        <td><span class="badge bg-info">${r.total_providers ?? '—'}</span></td>
+        <td><span class="badge bg-secondary">${r.processed ?? '—'}</span></td>
+        <td><span class="badge bg-success">${r.success_count ?? '—'}</span></td>
+        <td><span class="badge bg-warning text-dark">${r.needs_review_count ?? '—'}</span></td>
+        <td>${r.completed_at ? escapeHtml(new Date(r.completed_at).toLocaleString()) : '—'}</td>
+        <td>
+          ${r.needs_review_count > 0 ? `<button class="btn btn-sm btn-info view-issues-btn" data-run-id="${escapeHtml(String(r.id))}"><i class="bi bi-eye"></i> View Issues</button>` : '<span class="text-muted">No issues</span>'}
+        </td>
+      </tr>`).join('');
+
+    tbody.innerHTML = rows;
+  } catch (err) {
+    console.error('Error loading runs:', err);
+    alert('Error loading validation runs');
   }
-
-  const rows = json.runs.map(r => `
-    <tr>
-      <td>${escapeHtml(String(r.id))}</td>
-      <td>${r.started_at ? escapeHtml(new Date(r.started_at).toLocaleString()) : ''}</td>
-      <td>${r.total_providers ?? ''}</td>
-      <td>${r.processed ?? ''}</td>
-      <td>${r.success_count ?? ''}</td>
-      <td>${r.needs_review_count ?? ''}</td>
-      <td>${r.completed_at ? escapeHtml(new Date(r.completed_at).toLocaleString()) : ''}</td>
-      <td><button class="viewRunIssues" data-id="${escapeHtml(String(r.id))}">View Issues</button></td>
-    </tr>`).join('');
-
-  tbody.innerHTML = rows;
 }
 
 document.getElementById('startRun')?.addEventListener('click', async () => {
   try {
-    // Show SweetAlert spinner modal while the run executes
     Swal.fire({
-      title: 'Starting validation run',
-      html: 'Please wait — validating providers...',
+      title: 'Starting Validation Run',
+      html: '<p>Please wait — validating providers...</p>',
       allowOutsideClick: false,
       didOpen: () => {
         Swal.showLoading();
@@ -38,25 +51,26 @@ document.getElementById('startRun')?.addEventListener('click', async () => {
     const res = await fetch('/api/validation-runs', { method: 'POST' });
     const json = await res.json();
 
-    // Close spinner
     Swal.close();
 
     if (!res.ok) {
-      Swal.fire({ icon: 'error', title: 'Run failed', text: json?.error || 'Unknown error' });
+      Swal.fire({ icon: 'error', title: 'Run Failed', text: json?.error || 'Unknown error' });
       return;
     }
 
-    // Refresh runs list after starting
     await loadRuns();
 
-    Swal.fire({ icon: 'success', title: 'Validation run complete', text: `Run ID: ${json.runId || json.id || ''}` });
+    Swal.fire({ 
+      icon: 'success', 
+      title: 'Validation Run Complete!', 
+      html: `<p>Run ID: <code>${escapeHtml(String(json.runId || json.id || ''))}</code></p>`,
+      confirmButtonText: 'OK'
+    });
   } catch (err) {
     Swal.close();
     Swal.fire({ icon: 'error', title: 'Error', text: err?.message || String(err) });
   }
 });
-
-loadRuns();
 
 function escapeHtml(text) {
   return String(text)
@@ -67,33 +81,155 @@ function escapeHtml(text) {
     .replace(/'/g, '&#039;');
 }
 
-// handle clicking View Issues for a run using event delegation
+// Handle clicking View Issues for a run using event delegation
 document.addEventListener('click', async (ev) => {
-  const btn = ev.target.closest('.viewRunIssues');
+  const btn = ev.target.closest('.view-issues-btn');
   if (!btn) return;
-  const runId = btn.dataset.id;
+  
+  const runId = btn.dataset.runId;
   try {
-    Swal.fire({ title: 'Loading issues...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+    Swal.fire({ 
+      title: 'Loading Issues...', 
+      didOpen: () => Swal.showLoading(), 
+      allowOutsideClick: false 
+    });
+    
     const res = await fetch(`/api/validation-runs/${runId}/issues`);
     const json = await res.json();
     Swal.close();
+    
     const issues = json.issues || [];
     if (issues.length === 0) {
-      Swal.fire('No issues', 'No validation issues found for this run', 'info');
+      Swal.fire('No Issues', 'No validation issues found for this run', 'info');
       return;
     }
 
-    // build HTML table
-    let html = '<table border="1" cellpadding="6" cellspacing="0" style="width:100%;text-align:left"><thead><tr><th>ID</th><th>Provider</th><th>Field</th><th>Old</th><th>Suggested</th><th>Confidence</th><th>Severity</th><th>Status</th></tr></thead><tbody>';
+    // Build Bootstrap-styled HTML table
+    let html = `
+      <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+        <table class="table table-sm table-striped" id="issuesModalTable">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Provider</th>
+              <th>Field</th>
+              <th>Current</th>
+              <th>Suggested</th>
+              <th>Confidence</th>
+              <th>Severity</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+    
     for (const it of issues) {
-      const providerName = (it.providers && it.providers.name) ? escapeHtml(it.providers.name) : '';
-      html += `<tr><td>${escapeHtml(it.id)}</td><td>${providerName}</td><td>${escapeHtml(it.field_name)}</td><td>${escapeHtml(it.old_value)}</td><td>${escapeHtml(it.suggested_value)}</td><td>${escapeHtml(it.confidence)}</td><td>${escapeHtml(it.severity)}</td><td>${escapeHtml(it.status)}</td></tr>`;
+      const providerName = (it.providers && it.providers.name) ? escapeHtml(it.providers.name) : 'N/A';
+      const confidence = ((it.confidence || 0) * 100).toFixed(0);
+      const isOpen = it.status === 'OPEN';
+      const statusBadgeClass = it.status === 'ACCEPTED' ? 'bg-success' : it.status === 'REJECTED' ? 'bg-secondary' : 'bg-warning text-dark';
+      
+      html += `
+        <tr data-issue-id="${escapeHtml(it.id)}">
+          <td><code>${escapeHtml(it.id)}</code></td>
+          <td><a href="/provider/${it.provider_id}" target="_blank" class="text-decoration-none">${providerName}</a></td>
+          <td><strong>${escapeHtml(it.field_name)}</strong></td>
+          <td>${escapeHtml(it.old_value)}</td>
+          <td><span class="badge bg-info">${escapeHtml(it.suggested_value)}</span></td>
+          <td><span class="badge bg-secondary">${confidence}%</span></td>
+          <td><span class="badge bg-danger">${escapeHtml(it.severity)}</span></td>
+          <td><span class="badge ${statusBadgeClass}">${escapeHtml(it.status)}</span></td>
+          <td class="action-cell">
+            ${isOpen ? `
+              <button class="btn btn-sm btn-success accept-modal-issue" data-issue-id="${escapeHtml(it.id)}" data-provider-id="${it.provider_id}">
+                <i class="bi bi-check-circle"></i> Accept
+              </button>
+              <button class="btn btn-sm btn-danger reject-modal-issue" data-issue-id="${escapeHtml(it.id)}">
+                <i class="bi bi-x-circle"></i> Reject
+              </button>
+            ` : `
+              <span class="text-muted">Closed</span>
+            `}
+          </td>
+        </tr>
+      `;
     }
-    html += '</tbody></table>';
+    
+    html += '</tbody></table></div>';
 
-    Swal.fire({ title: `Issues for run ${escapeHtml(String(runId))}`, html, width: '80%', confirmButtonText: 'Close' });
+    Swal.fire({ 
+      title: `Issues for Run ${escapeHtml(String(runId))}`, 
+      html, 
+      width: '90%', 
+      confirmButtonText: 'Close',
+      didOpen: () => {
+        // Allow scrolling inside the modal
+        Swal.getHtmlContainer().style.overflowY = 'auto';
+        
+        // Add event listeners for Accept/Reject buttons in modal
+        document.querySelectorAll('.accept-modal-issue').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const issueId = e.currentTarget.dataset.issueId;
+            const providerId = e.currentTarget.dataset.providerId;
+            e.currentTarget.disabled = true;
+            
+            try {
+              const res = await fetch(`/api/issues/${issueId}/accept`, { method: 'POST' });
+              if (!res.ok) {
+                const json = await res.json();
+                alert('Failed to accept: ' + (json?.error || 'Unknown error'));
+                e.currentTarget.disabled = false;
+                return;
+              }
+              
+              // Update the row in the modal
+              const row = document.querySelector(`tr[data-issue-id="${issueId}"]`);
+              if (row) {
+                row.querySelector('td:nth-child(8) .badge').className = 'badge bg-success';
+                row.querySelector('td:nth-child(8) .badge').textContent = 'ACCEPTED';
+                row.querySelector('.action-cell').innerHTML = '<span class="text-muted">Closed</span>';
+              }
+            } catch (err) {
+              alert('Error: ' + err.message);
+              e.currentTarget.disabled = false;
+            }
+          });
+        });
+        
+        document.querySelectorAll('.reject-modal-issue').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const issueId = e.currentTarget.dataset.issueId;
+            e.currentTarget.disabled = true;
+            
+            try {
+              const res = await fetch(`/api/issues/${issueId}/reject`, { method: 'POST' });
+              if (!res.ok) {
+                const json = await res.json();
+                alert('Failed to reject: ' + (json?.error || 'Unknown error'));
+                e.currentTarget.disabled = false;
+                return;
+              }
+              
+              // Update the row in the modal
+              const row = document.querySelector(`tr[data-issue-id="${issueId}"]`);
+              if (row) {
+                row.querySelector('td:nth-child(8) .badge').className = 'badge bg-secondary';
+                row.querySelector('td:nth-child(8) .badge').textContent = 'REJECTED';
+                row.querySelector('.action-cell').innerHTML = '<span class="text-muted">Closed</span>';
+              }
+            } catch (err) {
+              alert('Error: ' + err.message);
+              e.currentTarget.disabled = false;
+            }
+          });
+        });
+      }
+    });
   } catch (err) {
     Swal.close();
     Swal.fire('Error', err?.message || String(err), 'error');
   }
 });
+
+loadRuns();

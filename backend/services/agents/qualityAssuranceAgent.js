@@ -1,5 +1,32 @@
 import { supabase } from "../../supabaseClient.js";
 
+/**
+ * Normalize specialty text for comparison by:
+ * - Converting to lowercase
+ * - Removing punctuation and extra whitespace
+ * - Sorting words alphabetically (handles "Certified Registered Nurse Anesthetist" vs "Nurse Anesthetist, Certified Registered")
+ */
+function normalizeSpecialty(text) {
+  if (!text) return '';
+  return text
+    .toLowerCase()
+    .replace(/[,.-]/g, ' ')  // Replace punctuation with spaces
+    .replace(/\s+/g, ' ')    // Normalize multiple spaces to single space
+    .trim()
+    .split(' ')
+    .filter(word => word.length > 0)
+    .sort()                  // Sort words alphabetically
+    .join(' ');
+}
+
+/**
+ * Normalize phone number for comparison by removing all non-digit characters
+ */
+function normalizePhone(phone) {
+  if (!phone) return '';
+  return phone.replace(/\D/g, '');
+}
+
 export async function runQualityAssurance(provider, runId) {
   const { data: sources } = await supabase
     .from("provider_sources")
@@ -13,7 +40,7 @@ export async function runQualityAssurance(provider, runId) {
 
   const suggested = {};
   const npiPhone = npiSource.raw_data.phone;
-  if (npiPhone && npiPhone !== provider.phone) {
+  if (npiPhone && normalizePhone(npiPhone) !== normalizePhone(provider.phone)) {
     suggested.phone = {
       oldValue: provider.phone,
       suggestedValue: npiPhone,
@@ -22,7 +49,7 @@ export async function runQualityAssurance(provider, runId) {
   }
 
   const npiSpec = npiSource.raw_data.speciality;
-  if (npiSpec && npiSpec !== provider.speciality) {
+  if (npiSpec && normalizeSpecialty(npiSpec) !== normalizeSpecialty(provider.speciality)) {
     suggested.speciality = {
       oldValue: provider.speciality,
       suggestedValue: npiSpec,

@@ -1,28 +1,52 @@
 async function loadProviders(){
-  const res = await fetch('/api/providers');
-  const json = await res.json();
-  const table = document.getElementById('providersTbl');
-  const tbody = table.querySelector('tbody');
-  if (!json.providers || json.providers.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6">No providers found.</td></tr>';
-    return;
+  try {
+    const res = await fetch('/api/providers');
+    const json = await res.json();
+    const container = document.getElementById('providersContainer');
+    
+    if (!json.providers || json.providers.length === 0) {
+      container.innerHTML = '<div class="alert alert-info" role="alert"><i class="bi bi-info-circle"></i> No providers found. <a href="/upload">Upload a CSV</a> to get started.</div>';
+      return;
+    }
+
+    const rows = json.providers.map(p => {
+      const nameText = escapeHtml(p.name || '');
+      return `
+        <tr>
+          <td><a href="/provider/${p.id}" class="text-decoration-none">${nameText}</a></td>
+          <td>${escapeHtml(p.phone || '')}</td>
+          <td>${escapeHtml(p.email || '')}</td>
+          <td>${escapeHtml(p.city || '')}</td>
+          <td>${escapeHtml(p.state || '')}</td>
+          <td><span class="badge bg-secondary">${p.issues_count ?? 0}</span></td>
+          <td><button class="btn btn-sm btn-info view-provider-btn" data-id="${p.id}"><i class="bi bi-eye"></i> View</button></td>
+        </tr>`;
+    }).join('');
+
+    const html = `
+      <table class="table table-hover table-striped">
+        <thead class="table-light">
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>City</th>
+            <th>State</th>
+            <th>Issues</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+    `;
+    
+    container.innerHTML = html;
+  } catch (err) {
+    console.error('Error loading providers:', err);
+    document.getElementById('providersContainer').innerHTML = '<div class="alert alert-danger" role="alert"><i class="bi bi-exclamation-triangle"></i> Error loading providers</div>';
   }
-
-  const rows = json.providers.map(p => {
-    const nameText = escapeHtml(p.name || '');
-    return `
-      <tr>
-        <td><a href="/provider/${p.id}">${nameText}</a></td>
-        <td>${escapeHtml(p.phone || '')}</td>
-        <td>${escapeHtml(p.email || '')}</td>
-        <td>${escapeHtml(p.city || '')}</td>
-        <td>${escapeHtml(p.state || '')}</td>
-        <td>${p.issues_count ?? 0}</td>
-        <td><button class="viewProvider" data-id="${p.id}">View</button></td>
-      </tr>`;
-  }).join('');
-
-  tbody.innerHTML = rows;
 }
 
 loadProviders();
@@ -36,9 +60,9 @@ function escapeHtml(text) {
     .replace(/'/g, '&#039;');
 }
 
-// delegate click for view buttons
+// Delegate click for view buttons
 document.addEventListener('click', (ev) => {
-  const btn = ev.target.closest('.viewProvider');
+  const btn = ev.target.closest('.view-provider-btn');
   if (!btn) return;
   const id = btn.dataset.id;
   window.location.href = `/provider/${id}`;

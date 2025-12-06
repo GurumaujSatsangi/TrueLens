@@ -4,56 +4,87 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Validation Runs - TrueLens</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
     <link rel="stylesheet" href="/css/styles.css" />
   </head>
   <body>
-    <nav class="topbar">
-      <a class="brand" href="/">TrueLens</a>
-      <div class="navlinks">
-        <a href="/upload">Upload</a>
-        <a href="/providers">Providers</a>
-        <a href="/runs">Runs</a>
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background-color: #ffe600;">
+      <div class="container-fluid">
+        <a class="navbar-brand fw-bold text-dark" href="/"><i class="bi bi-check-circle-fill"></i> TrueLens</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item"><a class="nav-link text-dark" href="/upload"><i class="bi bi-upload"></i> Upload</a></li>
+            <li class="nav-item"><a class="nav-link text-dark" href="/providers"><i class="bi bi-people-fill"></i> Providers</a></li>
+            <li class="nav-item"><a class="nav-link text-dark active" href="/runs"><i class="bi bi-play-circle-fill"></i> Runs</a></li>
+          </ul>
+        </div>
       </div>
     </nav>
 
-    <main class="container">
-      <h1>Validation Runs</h1>
-      <div id="runsList">
-        <table id="runsTbl" border="0" cellpadding="8" cellspacing="0">
-          <thead>
-            <tr>
-              <th>Run ID</th>
-              <th>Created</th>
-              <th>Total</th>
-              <th>Processed</th>
-              <th>Success</th>
-              <th>Needs Review</th>
-              <th>Completed</th>
-              <th>Issues</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% if (typeof runs !== 'undefined' && runs && runs.length) { %>
-              <% runs.forEach(function(r){ %>
-                <tr>
-                  <td><%= r.id %></td>
-                  <td><%= r.started_at ? new Date(r.started_at).toLocaleString() : '' %></td>
-                  <td><%= r.total_providers ?? '' %></td>
-                  <td><%= r.processed ?? '' %></td>
-                  <td><%= r.success_count ?? '' %></td>
-                  <td><%= r.needs_review_count ?? '' %></td>
-                  <td><%= r.completed_at ? new Date(r.completed_at).toLocaleString() : '' %></td>
-                </tr>
-              <% }) %>
-            <% } else { %>
-              <tr><td colspan="7">No runs yet.</td></tr>
-            <% } %>
-          </tbody>
-        </table>
+    <main class="container-fluid py-5">
+      <div class="row mb-4">
+        <div class="col">
+          <h1 class="display-5 fw-bold"><i class="bi bi-play-circle"></i> Validation Runs</h1>
+        </div>
+        <div class="col-auto">
+          <button id="startRun" class="btn btn-success btn-lg"><i class="bi bi-play-fill"></i> Start New Run</button>
+        </div>
       </div>
-      <button id="startRun">Start Validation Run</button>
+
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div id="runsList">
+            <div class="spinner-border text-primary" role="status" style="display: none;">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <table id="runsTbl" class="table table-hover table-striped" style="display: none;">
+              <thead class="table-light">
+                <tr>
+                  <th>Run ID</th>
+                  <th>Created</th>
+                  <th>Total</th>
+                  <th>Processed</th>
+                  <th>Success</th>
+                  <th>Needs Review</th>
+                  <th>Completed</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% if (typeof runs !== 'undefined' && runs && runs.length) { %>
+                  <% runs.forEach(function(r){ %>
+                    <tr>
+                      <td><code><%= r.id %></code></td>
+                      <td><%= r.started_at ? new Date(r.started_at).toLocaleString() : '—' %></td>
+                      <td><span class="badge bg-info"><%= r.total_providers ?? '—' %></span></td>
+                      <td><span class="badge bg-secondary"><%= r.processed ?? '—' %></span></td>
+                      <td><span class="badge bg-success"><%= r.success_count ?? '—' %></span></td>
+                      <td><span class="badge bg-warning text-dark"><%= r.needs_review_count ?? '—' %></span></td>
+                      <td><%= r.completed_at ? new Date(r.completed_at).toLocaleString() : '—' %></td>
+                      <td>
+                        <% if (r.needs_review_count > 0) { %>
+                          <button class="btn btn-sm btn-info view-issues-btn" data-run-id="<%= r.id %>"><i class="bi bi-eye"></i> View Issues</button>
+                        <% } else { %>
+                          <span class="text-muted">No issues</span>
+                        <% } %>
+                      </td>
+                    </tr>
+                  <% }) %>
+                <% } else { %>
+                  <tr><td colspan="8" class="text-center text-muted py-4">No validation runs yet. Start one to begin!</td></tr>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="/js/runs.js"></script>
   </body>
