@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Upload - TrueLens</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body>
+    <nav class="topbar">
+      <a class="brand" href="/">TrueLens</a>
+      <div class="navlinks">
+        <a href="/upload">Upload</a>
+        <a href="/providers">Providers</a>
+        <a href="/runs">Runs</a>
+      </div>
+    </nav>
+
+    <main class="container">
+      <h1>Upload CSV</h1>
+      <form id="uploadForm">
+        <input type="file" name="file" accept=".csv" />
+        <button type="submit">Upload</button>
+      </form>
+
+      <div id="uploadResult"></div>
+    </main>
+
+    <script src="/js/upload.js"></script>
+  </body>
+</html>

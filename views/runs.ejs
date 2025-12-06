@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Validation Runs - TrueLens</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body>
+    <nav class="topbar">
+      <a class="brand" href="/">TrueLens</a>
+      <div class="navlinks">
+        <a href="/upload">Upload</a>
+        <a href="/providers">Providers</a>
+        <a href="/runs">Runs</a>
+      </div>
+    </nav>
+
+    <main class="container">
+      <h1>Validation Runs</h1>
+      <div id="runsList">
+        <table id="runsTbl" border="0" cellpadding="8" cellspacing="0">
+          <thead>
+            <tr>
+              <th>Run ID</th>
+              <th>Created</th>
+              <th>Total</th>
+              <th>Processed</th>
+              <th>Success</th>
+              <th>Needs Review</th>
+              <th>Completed</th>
+              <th>Issues</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (typeof runs !== 'undefined' && runs && runs.length) { %>
+              <% runs.forEach(function(r){ %>
+                <tr>
+                  <td><%= r.id %></td>
+                  <td><%= r.started_at ? new Date(r.started_at).toLocaleString() : '' %></td>
+                  <td><%= r.total_providers ?? '' %></td>
+                  <td><%= r.processed ?? '' %></td>
+                  <td><%= r.success_count ?? '' %></td>
+                  <td><%= r.needs_review_count ?? '' %></td>
+                  <td><%= r.completed_at ? new Date(r.completed_at).toLocaleString() : '' %></td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr><td colspan="7">No runs yet.</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+      <button id="startRun">Start Validation Run</button>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="/js/runs.js"></script>
+  </body>
+</html>

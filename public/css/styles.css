@@ -1,0 +1,15 @@
+:root{
+  --ey-dark: #333333;
+  --ey-yellow: #ffe600;
+  --ey-white: #ffffff;
+  --ey-grey-light: #cccccc;
+  --ey-grey-mid: #999999;
+}
+
+body{font-family: Arial, Helvetica, sans-serif; color:var(--ey-dark); background:#fff; margin:0}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;background:var(--ey-yellow)}
+.topbar .brand{font-weight:700;color:var(--ey-dark);text-decoration:none}
+.topbar .navlinks a{margin-left:12px;color:var(--ey-dark);text-decoration:none}
+.container{padding:20px}
+
+button{background:var(--ey-dark);color:var(--ey-white);border:none;padding:8px 12px;border-radius:4px}
